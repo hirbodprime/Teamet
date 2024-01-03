@@ -13,8 +13,10 @@ class FolderModel(models.Model):
         verbose_name_plural = 'Folders'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='folders')
+    parent_folder = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField()
+    path = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

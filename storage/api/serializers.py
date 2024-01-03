@@ -4,25 +4,33 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from storage.models import FolderModel
-from storage.utils import slugify
+from storage.utils import slugify, generate_path
 
 
 class FolderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderModel
-        fields = ['name', 'user']
+        fields = ['name', 'parent_folder', 'user']
         read_only_fields = ['user']
 
-    def validate_name(self, value):
+    def validate(self, attrs):
+        name = attrs.get('name')
+        parent = attrs.get('parent_folder')
+
         try:
             user = self.context['request'].user
-            FolderModel.objects.get(slug=slugify(value), user=user)
+            FolderModel.objects.get(slug=slugify(name), parent_folder=parent, user=user)
             raise serializers.ValidationError('folder with this name already exists.')
         
         except ObjectDoesNotExist:
-            return value
+            pass
+
+        return super().validate(attrs)
 
     def create(self, validated_data):
+        name = validated_data.get('name')
+        parent = validated_data.get('parent_folder')
+        validated_data['path'] = generate_path(parent, name)
         # Automatically set the user from the request
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)

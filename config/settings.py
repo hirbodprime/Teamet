@@ -147,3 +147,4 @@ SIMPLE_JWT = {
 
 
 SITE_DOMAIN = 'http://127.0.0.1:8000'
+FOLDER_ROOT = 'folders'

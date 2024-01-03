@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import serializers as custom_serializers
-from storage.utils import slugify
+from storage.utils import slugify, generate_path
 from storage.models import FolderModel
 from storage.permissions import IsOwnerOrAdmin
 
@@ -25,8 +25,10 @@ class FolderCreateAPIView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            folder_name = serializer.validated_data.get('name')
-            os.mkdir(f'./folders/{request.user.email}/{slugify(folder_name)}')
+            name = serializer.validated_data.get('name')
+            parent = serializer.validated_data.get('parent_folder')
+            path = generate_path(parent, name)
+            os.mkdir(f'./{settings.FOLDER_ROOT}/{request.user.email}/{path}')
             self.perform_create(serializer)
             response_data = {'message': 'folder created.'}
             status_code = status.HTTP_201_CREATED
