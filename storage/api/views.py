@@ -57,10 +57,7 @@ class FolderListAPIView(generics.ListAPIView):
 class FolderDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = custom_serializers.FolderListDetailSerializer
-    
-    def get_object(self):
-        folder_id = self.kwargs.get('pk')
-        return get_object_or_404(FolderModel, pk=folder_id)
+    queryset = FolderModel.objects.all()
     
 
 class FolderRenameAPIView(generics.UpdateAPIView):
