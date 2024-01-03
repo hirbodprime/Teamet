@@ -45,7 +45,7 @@ class FolderListDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'name', 'slug', 'created_at', 'path']
 
     def get_path(self, obj):
-        return f'{settings.SITE_DOMAIN}/folders/{obj.user.email}/{obj.slug}'
+        return f'{settings.FOLDER_ROOT}/{obj.user.email}/{obj.path}'
     
 
 class FolderRenameSerializer(serializers.ModelSerializer):
