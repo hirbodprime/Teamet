@@ -1,7 +1,8 @@
-import os
+import os, shutil
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from .models import FolderModel
@@ -20,7 +21,16 @@ def create_folder(sender, created, instance, **kwargs):
         except Exception as e:
             print(e)
             
-            
+
+@receiver(post_delete, sender=User)
+def delete_folder(sender, instance, **kwargs):
+    try:
+        shutil.rmtree(f'./{settings.FOLDER_ROOT}/{instance.email}')
+
+    except Exception as e:
+        print(str(e))
+
+
 @receiver(post_save, sender=FolderModel)
 def update_subfolders(sender, created, instance, **kwargs):
     if not created:
@@ -29,4 +39,3 @@ def update_subfolders(sender, created, instance, **kwargs):
         for folder in sub_folders:
             folder.path = f'{instance.slug}/{folder.slug}'
             folder.save()
-            
