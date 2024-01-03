@@ -18,7 +18,7 @@ from storage.permissions import IsOwnerOrAdmin
 
 class FolderCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = custom_serializers.FolderCreateRenameSerializer
+    serializer_class = custom_serializers.FolderCreateSerializer
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -64,7 +64,7 @@ class FolderDetailAPIView(generics.RetrieveAPIView):
 class FolderRenameAPIView(generics.UpdateAPIView):
     permission_classes = [IsOwnerOrAdmin]
     queryset = FolderModel.objects.all()
-    serializer_class = custom_serializers.FolderCreateRenameSerializer
+    serializer_class = custom_serializers.FolderRenameSerializer
 
     def perform_update(self, serializer):
         try:

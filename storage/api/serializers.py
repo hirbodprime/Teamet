@@ -7,9 +7,7 @@ from storage.models import FolderModel
 from storage.utils import slugify
 
 
-class FolderCreateRenameSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()
-
+class FolderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderModel
         fields = ['name', 'user']
@@ -40,4 +38,19 @@ class FolderListDetailSerializer(serializers.ModelSerializer):
 
     def get_path(self, obj):
         return f'{settings.SITE_DOMAIN}/folders/{obj.user.email}/{obj.slug}'
+    
+
+class FolderRenameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderModel
+        fields = ['name']
+
+    def validate_name(self, value):
+        try:
+            user = self.context['request'].user
+            FolderModel.objects.get(slug=slugify(value), user=user)
+            raise serializers.ValidationError('folder with this name already exists.')
+        
+        except ObjectDoesNotExist:
+            return value
     
