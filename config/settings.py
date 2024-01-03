@@ -1,3 +1,5 @@
+import os
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # apps
     'user',
+    'storage',
     # packages
     'rest_framework',
     'rest_framework_simplejwt',
@@ -111,6 +114,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -138,3 +144,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME_GRACE_PERIOD': timedelta(minutes=15),
     'SLIDING_TOKEN_REFRESH_EACH_TIME': True,
 }
+
+
+SITE_DOMAIN = 'http://127.0.0.1:8000'
