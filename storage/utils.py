@@ -9,9 +9,16 @@ def slugify(name):
     return name
 
 
-def generate_path(parent, name):
+def get_path_depth(parent, name):
     if parent:
-        return f'{parent.path}/{slugify(name)}'
+        return f'{parent.path}/{slugify(name)}', 1
     
-    return slugify(name)
+    return slugify(name), 0
+
+
+def check_depth(parent):
+    if not parent:
+        return True
+    
+    return parent.depth == 0
     

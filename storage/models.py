@@ -13,7 +13,9 @@ class FolderModel(models.Model):
         verbose_name_plural = 'Folders'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='folders')
-    parent_folder = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
+    # depth: number of parent folders, 0: no parent, 1: one parent
+    parent_folder = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='sub_folders')
+    depth = models.IntegerField(default=0)
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     path = models.TextField()

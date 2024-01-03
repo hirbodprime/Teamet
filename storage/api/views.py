@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import serializers as custom_serializers
-from storage.utils import slugify, generate_path
+from storage.utils import get_path_depth
 from storage.models import FolderModel
 from storage.permissions import IsOwnerOrAdmin
 
@@ -19,17 +19,13 @@ from storage.permissions import IsOwnerOrAdmin
 class FolderCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = custom_serializers.FolderCreateSerializer
-    
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+    def perform_create(self, serializer):
+        serializer.save()
+        path = serializer.data.get('path')
 
         try:
-            name = serializer.validated_data.get('name')
-            parent = serializer.validated_data.get('parent_folder')
-            path = generate_path(parent, name)
-            os.mkdir(f'./{settings.FOLDER_ROOT}/{request.user.email}/{path}')
-            self.perform_create(serializer)
+            os.mkdir(f'./{settings.FOLDER_ROOT}/{self.request.user.email}/{path}')
             response_data = {'message': 'folder created.'}
             status_code = status.HTTP_201_CREATED
 
@@ -42,13 +38,12 @@ class FolderCreateAPIView(generics.CreateAPIView):
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             response_data = {'error': 'folder creation failed.'}
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(response_data, status=status_code, headers=headers)
+        return Response(response_data, status=status_code)
 
     
 class FolderListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = custom_serializers.FolderListDetailSerializer
+    serializer_class = custom_serializers.FolderListSerializer
     
     def get_queryset(self):
         return FolderModel.objects.filter(user=self.request.user)
@@ -56,7 +51,7 @@ class FolderListAPIView(generics.ListAPIView):
 
 class FolderDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = custom_serializers.FolderListDetailSerializer
+    serializer_class = custom_serializers.FolderDetailSerializer
     queryset = FolderModel.objects.all()
     
 
@@ -66,21 +61,21 @@ class FolderRenameAPIView(generics.UpdateAPIView):
     serializer_class = custom_serializers.FolderRenameSerializer
 
     def perform_update(self, serializer):
+        
         try:
             folder = self.get_object()
-            folder_path = f'./folders/{folder.user.email}/{folder.slug}'
-            new_path = f'./folders/{folder.user.email}/{serializer.validated_data.get("name")}'
-            # development
-            # folder_path = f'{settings.SITE_DOMAIN}/folders/{folder.user.email}/{folder.slug}'
-            # new_path = f'{settings.SITE_DOMAIN}/folders/{folder.user.email}/{serializer.validated_data.get("name")}'
-            os.rename(folder_path, new_path)
+            new_name = serializer.validated_data.get('name')
+            parent = self.get_object().parent_folder
+            new_path, depth = get_path_depth(parent, new_name)
+            old_path = f'./{settings.FOLDER_ROOT}/{folder.user.email}/{folder.path}'
+            new_path = f'./{settings.FOLDER_ROOT}/{folder.user.email}/{new_path}'
+            os.rename(old_path, new_path)
+            serializer.save()
 
         except Exception as e:
             print(str(e))
             raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        serializer.save()
-
 
 class FolderDeleteAPIView(generics.DestroyAPIView):
     permission_classes = [IsOwnerOrAdmin]
@@ -89,8 +84,6 @@ class FolderDeleteAPIView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         try:
             folder_path = f'./folders/{instance.user.email}/{instance.slug}'
-            # development
-            # folder_path = f'{settings.SITE_DOMAIN}/folders/{instance.user.email}/{instance.slug}'
             shutil.rmtree(folder_path)
             instance.delete()
         

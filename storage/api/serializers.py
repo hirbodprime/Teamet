@@ -4,23 +4,26 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from storage.models import FolderModel
-from storage.utils import slugify, generate_path
+from storage.utils import slugify, get_path_depth, check_depth
 
 
 class FolderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderModel
-        fields = ['name', 'parent_folder', 'user']
-        read_only_fields = ['user']
+        fields = ['name', 'path', 'depth', 'parent_folder', 'user']
+        read_only_fields = ['user', 'path']
 
     def validate(self, attrs):
         name = attrs.get('name')
         parent = attrs.get('parent_folder')
+        depth_allowed = check_depth(parent)
+
+        if not depth_allowed:
+            raise serializers.ValidationError('you cannot create a sub-folder in this folder.')
 
         try:
             user = self.context['request'].user
             FolderModel.objects.get(slug=slugify(name), parent_folder=parent, user=user)
-            raise serializers.ValidationError('folder with this name already exists.')
         
         except ObjectDoesNotExist:
             pass
@@ -30,23 +33,36 @@ class FolderCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         name = validated_data.get('name')
         parent = validated_data.get('parent_folder')
-        validated_data['path'] = generate_path(parent, name)
+        path, depth = get_path_depth(parent, name)
+        validated_data['path'] = path
+        validated_data['depth'] = depth
         # Automatically set the user from the request
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
     
 
-class FolderListDetailSerializer(serializers.ModelSerializer):
-    path = serializers.SerializerMethodField(read_only=True)
+class FolderListSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.email')
 
     class Meta:
         model = FolderModel
         fields = ['id', 'user', 'name', 'slug', 'created_at', 'path']
 
-    def get_path(self, obj):
-        return f'{settings.FOLDER_ROOT}/{obj.user.email}/{obj.path}'
+
+class SubFolderListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderModel
+        fields = ['id', 'user', 'name', 'slug', 'created_at', 'path']
     
+
+class FolderDetailSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.email')
+    sub_folders = SubFolderListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FolderModel
+        fields = ['id', 'user', 'name', 'slug', 'created_at', 'path', 'sub_folders']
+
 
 class FolderRenameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,4 +77,11 @@ class FolderRenameSerializer(serializers.ModelSerializer):
         
         except ObjectDoesNotExist:
             return value
+        
+    def update(self, instance, validated_data):
+        name = validated_data.get('name')
+        parent = validated_data.get('parent_folder')
+        path, depth = get_path_depth(parent, name)
+        validated_data['path'] = path
+        return super().update(instance, validated_data)    
     
