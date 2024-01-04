@@ -13,6 +13,12 @@ class FolderCreateSerializer(serializers.ModelSerializer):
         fields = ['name', 'path', 'depth', 'parent_folder', 'user']
         read_only_fields = ['user', 'path']
 
+    def validate_parent_folder(self, value):
+        if value.user == self.context["request"].user:
+            return value
+        
+        raise serializers.ValidationError('this folder does not exists for this user.')
+
     def validate(self, attrs):
         name = attrs.get('name')
         parent = attrs.get('parent_folder')

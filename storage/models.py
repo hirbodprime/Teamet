@@ -22,7 +22,7 @@ class FolderModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.user.email}/{self.slug}'
+        return f'{self.pk}-{self.user.email}/{self.slug}'
     
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
