@@ -16,10 +16,11 @@ class OrderFormModel(models.Model):
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256)
     phone = PhoneNumberField()
+    email = models.EmailField()
     company = models.CharField(max_length=256)
     products = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.pk}-{self.user.email}: {self.products}'
+        return f'{self.pk}-{self.email}: {self.products}'
     

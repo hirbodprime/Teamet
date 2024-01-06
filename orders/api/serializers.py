@@ -10,7 +10,7 @@ class CreateOrderFormSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderFormModel
-        fields = ['user', 'first_name', 'last_name', 'phone', 'company', 'products']
+        fields = ['user', 'first_name', 'last_name', 'phone', 'email', 'company', 'products']
         read_only_fields = ['user']
 
     def create(self, validated_data):
