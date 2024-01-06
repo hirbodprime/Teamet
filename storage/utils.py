@@ -9,16 +9,15 @@ def slugify(name):
     return name
 
 
-def get_path_depth(parent, name):
+def get_path_depth(parent, name, user):
     if parent:
         return f'{parent.path}/{slugify(name)}', 1
-    
-    return slugify(name), 0
+    else:
+        return f'{user.email}/{slugify(name)}', 0
 
 
 def check_depth(parent):
     if not parent:
         return True
-    
     return parent.depth == 0
     

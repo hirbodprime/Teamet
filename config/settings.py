@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # apps
     'user',
     'storage',
+    'user_files',
     # packages
     'rest_framework',
     'rest_framework_simplejwt',

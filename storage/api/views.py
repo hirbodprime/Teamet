@@ -25,7 +25,7 @@ class FolderCreateAPIView(generics.CreateAPIView):
         path = serializer.data.get('path')
 
         try:
-            os.mkdir(f'./{settings.FOLDER_ROOT}/{self.request.user.email}/{path}')
+            os.mkdir(f'{settings.MEDIA_ROOT}/{path}')
             response_data = {'message': 'folder created.'}
             status_code = status.HTTP_201_CREATED
 
@@ -61,16 +61,13 @@ class FolderRenameAPIView(generics.UpdateAPIView):
     serializer_class = custom_serializers.FolderRenameSerializer
 
     def perform_update(self, serializer):
-        
         try:
             folder = self.get_object()
-            new_name = serializer.validated_data.get('name')
-            parent = self.get_object().parent_folder
-            new_path, depth = get_path_depth(parent, new_name)
-            old_path = f'./{settings.FOLDER_ROOT}/{folder.user.email}/{folder.path}'
-            new_path = f'./{settings.FOLDER_ROOT}/{folder.user.email}/{new_path}'
-            os.rename(old_path, new_path)
             serializer.save()
+            old_path = f'{settings.MEDIA_ROOT}/{folder.path}'
+            new_path = f'{settings.MEDIA_ROOT}/{serializer.data.get("path")}'
+            os.rename(old_path, new_path)
+
 
         except Exception as e:
             print(str(e))
@@ -81,12 +78,12 @@ class FolderDeleteAPIView(generics.DestroyAPIView):
     permission_classes = [IsOwnerOrAdmin]
     queryset = FolderModel
 
-    def perform_destroy(self, instance):
-        try:
-            folder_path = f'./folders/{instance.user.email}/{instance.slug}'
-            shutil.rmtree(folder_path)
-            instance.delete()
+    # def perform_destroy(self, instance):
+    #     try:
+    #         folder_path = f'./folders/{instance.user.email}/{instance.slug}'
+    #         shutil.rmtree(folder_path)
+    #         instance.delete()
         
-        except Exception as e:
-            print(str(e))
-            raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     except Exception as e:
+    #         print(str(e))
+    #         raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)
