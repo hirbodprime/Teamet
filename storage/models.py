@@ -1,10 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from storage.utils import slugify
+from user.models import ProfileModel
 
-
-User = get_user_model()
 
 
 class FolderModel(models.Model):
@@ -12,7 +10,7 @@ class FolderModel(models.Model):
         verbose_name = 'Folder'
         verbose_name_plural = 'Folders'
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='folders')
+    user_profile = models.ForeignKey(ProfileModel, on_delete=models.CASCADE, related_name='folders')
     # depth: number of parent folders, 0: no parent, 1: one parent
     parent_folder = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='sub_folders')
     depth = models.IntegerField(default=0)
