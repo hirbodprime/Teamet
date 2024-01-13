@@ -46,7 +46,7 @@ class FolderListAPIView(generics.ListAPIView):
     serializer_class = custom_serializers.FolderListSerializer
     
     def get_queryset(self):
-        return FolderModel.objects.filter(user=self.request.user)
+        return FolderModel.objects.filter(user_profile__user=self.request.user)
 
 
 class FolderDetailAPIView(generics.RetrieveAPIView):
@@ -68,9 +68,8 @@ class FolderRenameAPIView(generics.UpdateAPIView):
             new_path = f'{settings.MEDIA_ROOT}/{serializer.data.get("path")}'
             os.rename(old_path, new_path)
 
-
         except Exception as e:
-            print(str(e))
+            print(f'ERROR: {str(e)}')
             raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
@@ -78,12 +77,12 @@ class FolderDeleteAPIView(generics.DestroyAPIView):
     permission_classes = [IsOwnerOrAdmin]
     queryset = FolderModel
 
-    # def perform_destroy(self, instance):
-    #     try:
-    #         folder_path = f'./folders/{instance.user.email}/{instance.slug}'
-    #         shutil.rmtree(folder_path)
-    #         instance.delete()
+    def perform_destroy(self, instance):
+        try:
+            folder_path = f'{settings.MEDIA_ROOT}/{instance.path}'
+            shutil.rmtree(folder_path)
+            instance.delete()
         
-    #     except Exception as e:
-    #         print(str(e))
-    #         raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            print(str(e))
+            raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)

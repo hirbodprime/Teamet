@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
-from rest_framework import serializers
+from rest_framework import serializers, status
 
 from storage.models import FolderModel
 from storage.utils import slugify, get_path_depth, check_depth
@@ -26,19 +26,17 @@ class FolderCreateSerializer(serializers.ModelSerializer):
         depth_allowed = check_depth(parent)
 
         if not depth_allowed:
-            raise serializers.ValidationError('you cannot create a sub-folder in this folder.')
+            raise serializers.ValidationError('maximum depth reached. you cannot create a sub-folder in this folder.')
 
         try:
             user = self.context['request'].user
             user_profile = ProfileModel.objects.get(user=user)
-        
         except ObjectDoesNotExist:
-            raise serializers.ValidationError('internal error: this user does not have a profile.')
+            raise serializers.ValidationError('internal error: this user does not have a profile.', code=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         try:
             FolderModel.objects.get(slug=slugify(name), parent_folder=parent, user_profile=user_profile)
             raise serializers.ValidationError('folder with this name already exists.')
-        
         except ObjectDoesNotExist:
             pass
 
@@ -110,25 +108,19 @@ class FolderRenameSerializer(serializers.ModelSerializer):
         try:
             user = self.context['request'].user
             user_profile = ProfileModel.objects.get(user=user)
-        
         except ObjectDoesNotExist:
-            raise serializers.ValidationError('internal error: this user does not have a profile.')
-            
+            raise serializers.ValidationError('internal error: this user does not have a profile.', code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         try:
             FolderModel.objects.get(slug=slugify(value), user_profile=user_profile)
-            raise serializers.ValidationError('folder with this name already exists.')
-        
+            raise serializers.ValidationError('folder with this name already exists.', code=status.HTTP_403_FORBIDDEN)
         except ObjectDoesNotExist:
             return value
-        
-        except Exception as e:
-            print(f'ERROR: {str(e)}')
-            raise serializers.ValidationError('internal error.')
         
     def update(self, instance, validated_data):
         name = validated_data.get('name')
         parent = instance.parent_folder
-        path, depth = get_path_depth(parent, name, instance.user)
+        path, depth = get_path_depth(parent, name, instance.user_profile.user)
         validated_data['path'] = path
         return super().update(instance, validated_data)    
     

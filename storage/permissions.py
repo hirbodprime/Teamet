@@ -6,5 +6,5 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         if request.user.is_superuser:
             return True
         
-        return obj.user == request.user
+        return obj.user_profile.user == request.user
     
