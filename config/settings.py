@@ -2,7 +2,10 @@ import os
 
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,12 +14,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=*7^$!+93j7zrba(tow8m@pzdr%(sqmpzry(!a_jf6#-ylea#g'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -33,7 +36,7 @@ INSTALLED_APPS = [
     'storage',
     'user_files',
     'orders',
-    # packages
+    # Third party packages
     'rest_framework',
     'rest_framework_simplejwt',
 ]
@@ -137,7 +140,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('JWT',),
+    # 'AUTH_HEADER_TYPES': ('Bearer',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=200 * 400),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=400 * 600),
     'SLIDING_TOKEN_LIFETIME': timedelta(days=1),

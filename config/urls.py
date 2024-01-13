@@ -10,6 +10,7 @@ urlpatterns = [
     path('storage/', include('storage.urls')),
     path('files/', include('user_files.urls')),
     path('orders/', include('orders.urls')),
+    path('openai/', include('openai_app.urls')),
 ]
 
 if settings.DEBUG:
