@@ -20,7 +20,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class ProfileModel(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
-    storage = models.PositiveBigIntegerField(default=settings.USER_STORAGE_LIMIT)
+    used_storage = models.PositiveBigIntegerField(default=0)
 
     def __str__(self):
         return self.user.email
