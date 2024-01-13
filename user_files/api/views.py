@@ -25,7 +25,7 @@ class FileListAPIView(generics.ListAPIView):
     serializer_class = custom_serializers.FileListDetailSerializer
     
     def get_queryset(self):
-        return FileModel.objects.filter(user=self.request.user)
+        return FileModel.objects.filter(user_profile__user=self.request.user)
     
 
 class FileDetailAPIView(generics.RetrieveAPIView):
@@ -36,5 +36,14 @@ class FileDetailAPIView(generics.RetrieveAPIView):
 
 class FileDeleteAPIView(generics.DestroyAPIView):
     permission_classes = [IsOwnerOrAdmin]
-    # serializer_class = custom_serializers.FileListDetailSerializer
     queryset = FileModel.objects.all()
+
+    def perform_destroy(self, instance):
+        try:
+            file_path = f'{settings.MEDIA_ROOT}/{instance.path}'
+            os.remove(file_path)
+            instance.delete()
+        
+        except Exception as e:
+            print(str(e))
+            raise APIException({'error': 'operation failed.'}, code=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,17 +1,14 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from storage.models import FolderModel
+from user.models import ProfileModel
 from .utils import get_path
-
-
-User = get_user_model()
 
 
 def upload_path(instance, filename):
     if instance.parent_folder:
         return f'{instance.parent_folder.path}/{filename}'
-    return f'{instance.user.email}/{filename}'
+    return f'{instance.user_profile.user.email}/{filename}'
 
 
 class FileModel(models.Model):
@@ -19,7 +16,7 @@ class FileModel(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_files')
+    user_profile = models.ForeignKey(ProfileModel, on_delete=models.CASCADE, related_name='user_files')
     parent_folder = models.ForeignKey(FolderModel, on_delete=models.CASCADE, blank=True, null=True, related_name='folder_files')
     path = models.TextField()
     # depth: number of parent folders, 0: no parent, 1: one parents, 2: two parents
