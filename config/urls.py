@@ -9,6 +9,7 @@ urlpatterns = [
     path('user/', include('user.urls')),
     path('storage/', include('storage.urls')),
     path('files/', include('user_files.urls')),
+    path('orders/', include('orders.urls')),
 ]
 
 if settings.DEBUG:
