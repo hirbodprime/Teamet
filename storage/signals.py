@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from .models import FolderModel
+from user.models import ProfileModel
 from user_files.models import FileModel
 from user_files.utils import get_new_name
 
@@ -16,6 +17,7 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def create_folder(sender, created, instance, **kwargs):
     if created:
+        ProfileModel.objects.create(user=instance)
         try:
             os.mkdir(f'{settings.MEDIA_ROOT}/{instance.email}')
         

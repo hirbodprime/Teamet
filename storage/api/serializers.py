@@ -5,17 +5,18 @@ from rest_framework import serializers
 
 from storage.models import FolderModel
 from storage.utils import slugify, get_path_depth, check_depth
+from user.models import ProfileModel
 from user_files.api.serializers import FileListDetailSerializer
 
 
 class FolderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderModel
-        fields = ['name', 'path', 'depth', 'parent_folder', 'user']
-        read_only_fields = ['user', 'path']
+        fields = ['name', 'path', 'depth', 'parent_folder', 'user_profile']
+        read_only_fields = ['user_profile', 'path']
 
     def validate_parent_folder(self, value):
-        if value.user == self.context["request"].user:
+        if value.user_profile.user == self.context['request'].user:
             return value
         raise serializers.ValidationError('this folder does not exists for this user.')
 
@@ -29,7 +30,13 @@ class FolderCreateSerializer(serializers.ModelSerializer):
 
         try:
             user = self.context['request'].user
-            FolderModel.objects.get(slug=slugify(name), parent_folder=parent, user=user)
+            user_profile = ProfileModel.objects.get(user=user)
+        
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('internal error: this user does not have a profile.')
+            
+        try:
+            FolderModel.objects.get(slug=slugify(name), parent_folder=parent, user_profile=user_profile)
             raise serializers.ValidationError('folder with this name already exists.')
         
         except ObjectDoesNotExist:
@@ -40,7 +47,8 @@ class FolderCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Automatically set the user from the request
         user = self.context['request'].user
-        validated_data['user'] = user
+        user_profile = ProfileModel.objects.get(user=user)
+        validated_data['user_profile'] = user_profile
         name = validated_data.get('name')
         parent = validated_data.get('parent_folder')
         path, depth = get_path_depth(parent, name, user)
@@ -50,7 +58,7 @@ class FolderCreateSerializer(serializers.ModelSerializer):
     
 
 class FolderListSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source='user.email')
+    user = serializers.CharField(source='user_profile.user.email')
     path = serializers.SerializerMethodField()
 
     class Meta:
@@ -69,7 +77,7 @@ class SubFolderListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FolderModel
-        fields = ['id', 'user', 'name', 'slug', 'depth', 'created_at', 'path', 'folder_files']
+        fields = ['id', 'name', 'slug', 'depth', 'created_at', 'path', 'folder_files']
 
     def get_path(self, obj):
         if obj.path:
@@ -78,7 +86,7 @@ class SubFolderListSerializer(serializers.ModelSerializer):
     
 
 class FolderDetailSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source='user.email')
+    user = serializers.CharField(source='user_profile.user.email')
     sub_folders = SubFolderListSerializer(many=True, read_only=True)
     path = serializers.SerializerMethodField()
 
@@ -101,7 +109,13 @@ class FolderRenameSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         try:
             user = self.context['request'].user
-            FolderModel.objects.get(slug=slugify(value), user=user)
+            user_profile = ProfileModel.objects.get(user=user)
+        
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('internal error: this user does not have a profile.')
+            
+        try:
+            FolderModel.objects.get(slug=slugify(value), user_profile=user_profile)
             raise serializers.ValidationError('folder with this name already exists.')
         
         except ObjectDoesNotExist:
